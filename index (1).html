@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Giveaway</title>
+<style>
+:root{--bg:#0e0e10;--fg:#ececf0;--mut:#8b8b95;--line:#2a2a31;--card:#17171b;--acc:#ff4fa3;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:420px;margin:0 auto;padding:20px 16px 40px;display:flex;flex-direction:column;gap:14px}
+img{width:100%;height:auto;display:block;border-radius:18px}
+.row{display:flex;gap:8px}
+input{background:var(--card);border:1px solid var(--line);color:var(--fg);border-radius:12px;padding:13px 14px;font:inherit;min-width:0;outline:none}
+input:focus{border-color:var(--acc)}
+#name{flex:1 1 40%}#tag{flex:1 1 60%;text-transform:uppercase}
+button{background:var(--acc);color:#fff;border:0;border-radius:12px;padding:13px;font:inherit;font-weight:600;cursor:pointer}
+button:disabled{opacity:.45;cursor:default}
+.note{margin:0;text-align:center;font-size:14px;color:var(--fg)}
+#msg{min-height:1.4em;color:var(--mut);font-size:14px;text-align:center}
+#msg.err{color:#ff7b7b}#msg.ok{color:#7be0a0}
+</style>
+</head>
+<body>
+<main>
+<img alt="Giveaway" src="card.jpg">
+<div class="row">
+<input id="name" placeholder="Name:" autocomplete="off" maxlength="40">
+<input id="tag" placeholder="#TAG" autocomplete="off" autocapitalize="characters" maxlength="13">
+</div>
+<p class="note">By 19 November, keep 100 space in your barn and tools at limit.</p>
+<button id="go" disabled>Submit</button>
+<div id="msg"></div>
+</main>
+<script>
+(function(){
+// 1) Paste your Google Apps Script web app URL here:
+var SCRIPT_URL="PASTE_WEB_APP_URL_HERE";
+var KEY="giveaway-done";
+var $=function(i){return document.getElementById(i)};
+var nameEl=$("name"),tagEl=$("tag"),go=$("go"),msg=$("msg");
+function say(t,c){msg.textContent=t;msg.className=c||""}
+function norm(v){v=v.trim().toUpperCase().replace(/\s+/g,"");return v&&v[0]!=="#"?"#"+v:v}
+function valid(){return nameEl.value.trim()&&/^#[0-9A-Z]{3,12}$/.test(norm(tagEl.value))}
+function refresh(){go.disabled=!valid()}
+function lock(t,c){nameEl.disabled=tagEl.disabled=go.disabled=true;say(t,c)}
+function done(){try{if(localStorage.getItem(KEY))return true}catch(e){}return document.cookie.indexOf(KEY+"=1")>-1}
+function mark(){try{localStorage.setItem(KEY,"1")}catch(e){}document.cookie=KEY+"=1;max-age=31536000;path=/;SameSite=Lax"}
+nameEl.addEventListener("input",refresh);tagEl.addEventListener("input",refresh);
+if(done())lock("You have already submitted.","err");
+go.addEventListener("click",async function(){
+if(!valid()||done())return;
+go.disabled=true;say("Submitting…");
+try{
+var r=await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify({name:nameEl.value.trim(),tag:norm(tagEl.value)})});
+var d=await r.json();
+if(d.status==="ok"){mark();lock("Submitted. Thank you!","ok")}
+else if(d.status==="tag_exists"){say("This tag has already been submitted.","err");refresh()}
+else{say("Invalid name or tag.","err");refresh()}
+}catch(e){say("Couldn’t submit. Please try again.","err");refresh()}
+});
+})();
+</script>
+</body>
+</html>
