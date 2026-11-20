@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ভোট</title>
+<style>
+:root{--bg:#0e0e10;--fg:#ececf0;--mut:#8b8b95;--line:#2a2a31;--card:#17171b;--acc:#ff4fa3;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,"Segoe UI","Nirmala UI","Noto Sans Bengali",sans-serif}
+main{max-width:460px;margin:0 auto;padding:20px 16px 40px;display:flex;flex-direction:column;gap:14px}
+.rules{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;font-size:15px;white-space:pre-line}
+input{background:var(--card);border:1px solid var(--line);color:var(--fg);border-radius:12px;padding:13px 14px;font:inherit;min-width:0;outline:none;width:100%}
+input:focus{border-color:var(--acc)}
+.row{display:flex;gap:8px}
+.opt{flex:1;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:13px;font:inherit;font-weight:600;cursor:pointer}
+.opt.sel{border-color:var(--acc);background:var(--acc);color:#fff}
+.opt:disabled{cursor:default}
+#go{background:var(--acc);color:#fff;border:0;border-radius:12px;padding:13px;font:inherit;font-weight:600;cursor:pointer}
+button:disabled{opacity:.45}
+#msg{min-height:1.4em;color:var(--mut);font-size:14px;text-align:center}
+#msg.err{color:#ff7b7b}#msg.ok{color:#7be0a0}
+</style>
+</head>
+<body>
+<main>
+<div class="rules">🌾 হুডের নতুন নিয়ম - সবাই মন দিয়ে পড়ুন 🌾
+
+আসসালামু আলাইকুম সবাইকে! আমাদের হুডকে আরও শক্তিশালী করার জন্য কিছু নতুন নিয়ম করা হলো। আশা করি সবাই মানবে। ❤️
+
+১. ডার্বি নিয়ম - সবচেয়ে জরুরি
+🏆 প্রতি সপ্তাহে ডার্বি খেলতে হবে।
+🏆 যারা টানা ৩ সপ্তাহ ডার্বি মিস করবে, তাদেরকে হুডের সকল উপহার / সাহায্য থেকে বাদ দেওয়া হবে।
+🏆 তারপরও না খেললে হুড থেকে বের করে দেওয়া হবে।
+
+২. ছুটি নেওয়ার সুযোগ
+📢 যাদের পরীক্ষা, কাজ বা কোনো সমস্যা আছে, তারা আগে থেকেই ডার্বি থেকে ছুটি (Opt-Out) নিয়ে রাখবে।
+ছুটি নিলে মিস হিসেবে ধরা হবে না। কোনো সমস্যা নেই।
+
+৩. উপহারের নিয়ম
+🎁 যারা ডার্বি খেলবে, তারাই শুধু হুডের উপহার পাবে।
+🎁 যারা ডার্বি মিস করবে, তারা উপহার চাইতে পারবে না।
+
+৪. একসাথে থাকতে হবে
+🤝 হুড মানেই একসাথে খেলা। সবাই সবাইকে সাহায্য করবো, সক্রিয় থাকবো।
+
+এই নিয়ম আজ থেকে চালু হলো। কারো কোনো সমস্যা থাকলে লিডারকে আগে থেকে জানিয়ে দিও।
+
+আমরা সবাই মিলে আমাদের হুডকে এগিয়ে নিয়ে যাবো ইনশাআল্লাহ! 🏆🔥</div>
+<input id="name" placeholder="নাম:" autocomplete="off" maxlength="40">
+<div class="row">
+<button class="opt" data-v="হ্যা">হ্যা</button>
+<button class="opt" data-v="না">না</button>
+</div>
+<button id="go" disabled>ভোট দিন</button>
+<div id="msg"></div>
+</main>
+<script>
+(function(){
+// Paste your Google Apps Script web app URL here:
+var SCRIPT_URL="PASTE_WEB_APP_URL_HERE";
+var KEY="vote-done";
+var $=function(i){return document.getElementById(i)};
+var nameEl=$("name"),go=$("go"),msg=$("msg"),opts=document.querySelectorAll(".opt"),vote="";
+function say(t,c){msg.textContent=t;msg.className=c||""}
+function valid(){return nameEl.value.trim()&&vote}
+function refresh(){go.disabled=!valid()}
+function lock(t,c){nameEl.disabled=go.disabled=true;opts.forEach(function(o){o.disabled=true});say(t,c)}
+function done(){try{if(localStorage.getItem(KEY))return true}catch(e){}return document.cookie.indexOf(KEY+"=1")>-1}
+function mark(){try{localStorage.setItem(KEY,"1")}catch(e){}document.cookie=KEY+"=1;max-age=31536000;path=/;SameSite=Lax"}
+opts.forEach(function(o){o.addEventListener("click",function(){
+vote=o.dataset.v;opts.forEach(function(x){x.classList.toggle("sel",x===o)});refresh()})});
+nameEl.addEventListener("input",refresh);
+if(done())lock("আপনি আগেই ভোট দিয়েছেন।","err");
+go.addEventListener("click",async function(){
+if(!valid()||done())return;
+go.disabled=true;say("পাঠানো হচ্ছে…");
+try{
+var r=await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify({name:nameEl.value.trim(),vote:vote})});
+var d=await r.json();
+if(d.status==="ok"){mark();lock("ভোট জমা হয়েছে। ধন্যবাদ!","ok")}
+else if(d.status==="name_exists"){say("এই নামে আগেই ভোট দেওয়া হয়েছে।","err");refresh()}
+else if(d.status==="error"){say("সমস্যা হয়েছে: "+d.message,"err");refresh()}
+else{say("নাম বা ভোট সঠিক নয়।","err");refresh()}
+}catch(e){say("জমা দেওয়া যায়নি। আবার চেষ্টা করুন।","err");refresh()}
+});
+})();
+</script>
+</body>
+</html>
